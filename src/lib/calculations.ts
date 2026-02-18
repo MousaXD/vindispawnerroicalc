@@ -257,26 +257,46 @@ export function optimizeForReset(
       }
     }
 
-    // ── Phase 2: save all income (no more spawner purchases)
-    const phase2Days = totalDays - switchDay;
-    const phase2Minutes = phase2Days * 24 * 60;
-    const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
-    const earnedInPhase2 = perMin * phase2Minutes;
+    // ── Phase 2: earn income and buy lodestones continuously
+    //    (buying in batches so the balance cap doesn't limit us)
+    const phase2Hours = (totalDays - switchDay) * 24;
+    let totalLodestones = 0;
+    let totalSpentOnLodestones = 0;
 
-    let totalMoney = balance + earnedInPhase2;
-    if (totalMoney > balanceCap) totalMoney = balanceCap;
+    for (let h = 0; h < phase2Hours; h++) {
+      const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+      const earned = perMin * 60;
+      balance += earned;
+      if (balance > balanceCap) balance = balanceCap;
 
-    // buy lodestones
-    const lodestones = lodestoneCost > 0 ? Math.floor(totalMoney / lodestoneCost) : 0;
-    const islandLevels = lodestones * lodestoneValue;
+      // buy lodestones whenever we can afford them
+      if (lodestoneCost > 0) {
+        const canBuy = Math.floor(balance / lodestoneCost);
+        if (canBuy > 0) {
+          totalLodestones += canBuy;
+          totalSpentOnLodestones += canBuy * lodestoneCost;
+          balance -= canBuy * lodestoneCost;
+        }
+      }
+    }
+
+    // buy any remaining lodestones with leftover balance
+    if (lodestoneCost > 0) {
+      const remaining = Math.floor(balance / lodestoneCost);
+      totalLodestones += remaining;
+      totalSpentOnLodestones += remaining * lodestoneCost;
+      balance -= remaining * lodestoneCost;
+    }
+
+    const islandLevels = totalLodestones * lodestoneValue;
 
     breakdown.push({
       switchDay,
       spawnersAtSwitch: spawners,
       balanceAtSwitch: balance,
-      earnedInPhase2,
-      totalMoneyForLodestones: totalMoney,
-      lodestones,
+      earnedInPhase2: totalSpentOnLodestones + balance,
+      totalMoneyForLodestones: totalSpentOnLodestones,
+      lodestones: totalLodestones,
       islandLevels,
     });
   }
