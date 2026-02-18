@@ -224,6 +224,7 @@ export interface ResetDayBreakdown {
  * Phase 2 (switchDay → totalDays): buy lodestones at the given interval.
  *
  * @param lodestoneBuyIntervalMin - how often (in minutes) to buy lodestones in Phase 2
+ * @param spawnerBuyIntervalMin - how often (in minutes) to buy spawners in Phase 1
  * @param effectiveCap - total balance cap across all accounts
  */
 export function optimizeForReset(
@@ -236,22 +237,36 @@ export function optimizeForReset(
   lodestoneValue: number,
   effectiveCap: number,
   lodestoneBuyIntervalMin = 60,
+  spawnerBuyIntervalMin = 60,
 ): ResetOptimizerResult {
   const breakdown: ResetDayBreakdown[] = [];
 
   for (let switchDay = 0; switchDay <= totalDays; switchDay++) {
-    // ── Phase 1: reinvest into spawners (hourly buying)
+    // ── Phase 1: reinvest into spawners at the given interval
     let spawners = startSpawners;
     let balance = startBalance;
-    const phase1Hours = switchDay * 24;
+    const phase1TotalMinutes = switchDay * 24 * 60;
+    const phase1Intervals = Math.floor(phase1TotalMinutes / spawnerBuyIntervalMin);
 
-    for (let h = 0; h < phase1Hours; h++) {
+    for (let i = 0; i < phase1Intervals; i++) {
       const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
-      const earned = perMin * 60; // 1 hour of income
+      const earned = perMin * spawnerBuyIntervalMin;
       balance += earned;
       if (balance > effectiveCap) balance = effectiveCap;
 
       // buy spawners with available balance
+      while (balance >= spawnerCost) {
+        balance -= spawnerCost;
+        spawners += 1;
+      }
+    }
+
+    // leftover time in Phase 1 after last interval
+    const phase1Leftover = phase1TotalMinutes - phase1Intervals * spawnerBuyIntervalMin;
+    if (phase1Leftover > 0) {
+      const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+      balance += perMin * phase1Leftover;
+      if (balance > effectiveCap) balance = effectiveCap;
       while (balance >= spawnerCost) {
         balance -= spawnerCost;
         spawners += 1;

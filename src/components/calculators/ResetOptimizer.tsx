@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     CalendarClock,
     Trophy,
@@ -31,11 +32,12 @@ import {
 // Server reset date
 const RESET_DATE = new Date("2026-04-04T00:00:00");
 
-const LODESTONE_INTERVALS = [
-    { label: "10 min", minutes: 10 },
-    { label: "15 min", minutes: 15 },
-    { label: "1 hour", minutes: 60 },
-] as const;
+const PRESET_INTERVALS = [1, 10, 15, 60] as const;
+
+function formatInterval(min: number): string {
+    if (min >= 60) return `${min / 60}h`;
+    return `${min} min`;
+}
 
 function getDaysUntilReset(): number {
     const now = new Date();
@@ -68,10 +70,10 @@ export default function ResetOptimizer() {
 
     const daysLeft = getDaysUntilReset();
     const [customSwitchDay, setCustomSwitchDay] = useState<number | null>(null);
-    const [intervalIdx, setIntervalIdx] = useState(0); // default 10min
+    const [spawnerBuyInterval, setSpawnerBuyInterval] = useState(10);
+    const [lodestoneBuyInterval, setLodestoneBuyInterval] = useState(10);
 
     const effectiveCap = balanceLimit * accountCount;
-    const buyInterval = LODESTONE_INTERVALS[intervalIdx].minutes;
 
     const result = useMemo(
         () =>
@@ -84,7 +86,8 @@ export default function ResetOptimizer() {
                 lodestoneCost,
                 lodestoneValue,
                 effectiveCap,
-                buyInterval,
+                lodestoneBuyInterval,
+                spawnerBuyInterval,
             ),
         [
             currentSpawners,
@@ -95,7 +98,8 @@ export default function ResetOptimizer() {
             lodestoneCost,
             lodestoneValue,
             effectiveCap,
-            buyInterval,
+            lodestoneBuyInterval,
+            spawnerBuyInterval,
         ]
     );
 
@@ -162,8 +166,8 @@ export default function ResetOptimizer() {
             </CardHeader>
 
             <CardContent className="space-y-5 relative">
-                {/* ── Config Row: Accounts + Lodestone Interval ──────── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* ── Config Row: Accounts + Intervals ─────────────── */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {/* Account Count */}
                     <div className="space-y-2">
                         <label className="text-xs text-zinc-400 flex items-center gap-1.5">
@@ -178,8 +182,8 @@ export default function ResetOptimizer() {
                                     size="sm"
                                     onClick={() => setAccountCount(n)}
                                     className={`flex-1 h-8 text-xs font-mono font-bold transition-all ${accountCount === n
-                                            ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 shadow-sm shadow-blue-500/10"
-                                            : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                                        ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 shadow-sm shadow-blue-500/10"
+                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
                                         }`}
                                 >
                                     {n}
@@ -187,11 +191,46 @@ export default function ResetOptimizer() {
                             ))}
                         </div>
                         <p className="text-[10px] text-zinc-600">
-                            Effective cap:{" "}
+                            Cap:{" "}
                             <span className="text-zinc-400 font-mono">
                                 {formatMoney(effectiveCap)}
                             </span>
                         </p>
+                    </div>
+
+                    {/* Spawner Buy Interval */}
+                    <div className="space-y-2">
+                        <label className="text-xs text-zinc-400 flex items-center gap-1.5">
+                            <Sword className="h-3.5 w-3.5 text-emerald-400" />
+                            Buy Spawners Every
+                        </label>
+                        <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                            {PRESET_INTERVALS.map((m) => (
+                                <Button
+                                    key={m}
+                                    variant={spawnerBuyInterval === m ? "default" : "ghost"}
+                                    size="sm"
+                                    onClick={() => setSpawnerBuyInterval(m)}
+                                    className={`flex-1 h-8 text-xs font-medium transition-all ${spawnerBuyInterval === m
+                                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 shadow-sm shadow-emerald-500/10"
+                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                                        }`}
+                                >
+                                    {m >= 60 ? `${m / 60}h` : `${m}m`}
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="number"
+                                min={1}
+                                max={1440}
+                                value={spawnerBuyInterval}
+                                onChange={(e) => setSpawnerBuyInterval(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="bg-white/[0.04] border-white/[0.08] text-zinc-100 font-mono text-sm h-8 w-20"
+                            />
+                            <span className="text-[10px] text-zinc-500">min (custom)</span>
+                        </div>
                     </div>
 
                     {/* Lodestone Buy Interval */}
@@ -201,20 +240,31 @@ export default function ResetOptimizer() {
                             Buy Lodestones Every
                         </label>
                         <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-                            {LODESTONE_INTERVALS.map((iv, i) => (
+                            {PRESET_INTERVALS.map((m) => (
                                 <Button
-                                    key={iv.minutes}
-                                    variant={i === intervalIdx ? "default" : "ghost"}
+                                    key={m}
+                                    variant={lodestoneBuyInterval === m ? "default" : "ghost"}
                                     size="sm"
-                                    onClick={() => setIntervalIdx(i)}
-                                    className={`flex-1 h-8 text-xs font-medium transition-all ${i === intervalIdx
-                                            ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 shadow-sm shadow-purple-500/10"
-                                            : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                                    onClick={() => setLodestoneBuyInterval(m)}
+                                    className={`flex-1 h-8 text-xs font-medium transition-all ${lodestoneBuyInterval === m
+                                        ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 shadow-sm shadow-purple-500/10"
+                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
                                         }`}
                                 >
-                                    {iv.label}
+                                    {m >= 60 ? `${m / 60}h` : `${m}m`}
                                 </Button>
                             ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="number"
+                                min={1}
+                                max={1440}
+                                value={lodestoneBuyInterval}
+                                onChange={(e) => setLodestoneBuyInterval(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="bg-white/[0.04] border-white/[0.08] text-zinc-100 font-mono text-sm h-8 w-20"
+                            />
+                            <span className="text-[10px] text-zinc-500">min (custom)</span>
                         </div>
                     </div>
                 </div>
@@ -222,8 +272,8 @@ export default function ResetOptimizer() {
                 {/* ── Time to Cap Warning ────────────────────────────── */}
                 <div
                     className={`p-3 rounded-xl border flex items-start gap-3 ${capWarning
-                            ? "bg-red-500/[0.06] border-red-500/20"
-                            : "bg-white/[0.02] border-white/[0.06]"
+                        ? "bg-red-500/[0.06] border-red-500/20"
+                        : "bg-white/[0.02] border-white/[0.06]"
                         }`}
                 >
                     <AlertTriangle
@@ -248,9 +298,9 @@ export default function ResetOptimizer() {
                             <p className="text-[10px] text-zinc-500">
                                 Earning{" "}
                                 <span className="text-emerald-400 font-mono">
-                                    {formatMoney(perMin * buyInterval)}
+                                    {formatMoney(perMin * lodestoneBuyInterval)}
                                 </span>{" "}
-                                every {LODESTONE_INTERVALS[intervalIdx].label} — buy lodestones
+                                every {formatInterval(lodestoneBuyInterval)} — buy lodestones
                                 before you hit the cap
                             </p>
                         )}
@@ -320,8 +370,8 @@ export default function ResetOptimizer() {
                             size="sm"
                             onClick={() => setCustomSwitchDay(null)}
                             className={`h-7 px-3 text-xs font-medium transition-all duration-200 ${isUsingOptimal
-                                    ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border-yellow-500/30"
-                                    : "text-zinc-400 hover:text-zinc-200 border-white/[0.08] hover:bg-white/[0.04]"
+                                ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border-yellow-500/30"
+                                : "text-zinc-400 hover:text-zinc-200 border-white/[0.08] hover:bg-white/[0.04]"
                                 }`}
                         >
                             <Star className="h-3 w-3 mr-1" />
@@ -355,7 +405,8 @@ export default function ResetOptimizer() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500">
-                                Phase 1 — Buy Spawners
+                                Phase 1 — Buy Spawners (every{" "}
+                                {formatInterval(spawnerBuyInterval)})
                             </p>
                             <p className="text-sm text-zinc-300">
                                 Reinvest for{" "}
@@ -372,7 +423,7 @@ export default function ResetOptimizer() {
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500">
                                 Phase 2 — Buy Lodestones (every{" "}
-                                {LODESTONE_INTERVALS[intervalIdx].label})
+                                {formatInterval(lodestoneBuyInterval)})
                             </p>
                             <p className="text-sm text-zinc-300">
                                 Buy for{" "}
@@ -481,8 +532,8 @@ export default function ResetOptimizer() {
                         {!isUsingOptimal ? (
                             <div
                                 className={`p-3 rounded-xl border ${diffFromOptimal >= 0
-                                        ? "bg-emerald-500/[0.06] border-emerald-500/20"
-                                        : "bg-red-500/[0.04] border-red-500/15"
+                                    ? "bg-emerald-500/[0.06] border-emerald-500/20"
+                                    : "bg-red-500/[0.04] border-red-500/15"
                                     }`}
                             >
                                 <p
@@ -538,8 +589,8 @@ export default function ResetOptimizer() {
                             className="absolute inset-y-0 right-0 bg-gradient-to-r from-purple-500 to-purple-400 rounded-full"
                             style={{
                                 width: `${daysLeft > 0
-                                        ? ((daysLeft - activeSwitchDay) / daysLeft) * 100
-                                        : 0
+                                    ? ((daysLeft - activeSwitchDay) / daysLeft) * 100
+                                    : 0
                                     }%`,
                             }}
                         />
