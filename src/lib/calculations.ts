@@ -218,13 +218,13 @@ export interface ResetDayBreakdown {
 }
 
 /**
- * Finds the optimal day to stop buying spawners and start saving for lodestones.
+ * Finds the optimal day to stop buying spawners and start buying lodestones.
  *
- * Tries every possible switch day from 0 to totalDays:
- *  Phase 1 (day 0 → switchDay): reinvest into spawners every hour
- *  Phase 2 (switchDay → totalDays): save all income, then buy lodestones
+ * Phase 1 (day 0 → switchDay): reinvest into spawners every hour.
+ * Phase 2 (switchDay → totalDays): buy lodestones at the given interval.
  *
- * Returns the switch day that maximizes total island levels.
+ * @param lodestoneBuyIntervalMin - how often (in minutes) to buy lodestones in Phase 2
+ * @param effectiveCap - total balance cap across all accounts
  */
 export function optimizeForReset(
   startSpawners: number,
@@ -234,7 +234,8 @@ export function optimizeForReset(
   revenuePer4Min: number,
   lodestoneCost: number,
   lodestoneValue: number,
-  balanceCap: number
+  effectiveCap: number,
+  lodestoneBuyIntervalMin = 60,
 ): ResetOptimizerResult {
   const breakdown: ResetDayBreakdown[] = [];
 
@@ -248,7 +249,7 @@ export function optimizeForReset(
       const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
       const earned = perMin * 60; // 1 hour of income
       balance += earned;
-      if (balance > balanceCap) balance = balanceCap;
+      if (balance > effectiveCap) balance = effectiveCap;
 
       // buy spawners with available balance
       while (balance >= spawnerCost) {
@@ -257,19 +258,19 @@ export function optimizeForReset(
       }
     }
 
-    // ── Phase 2: earn income and buy lodestones continuously
-    //    (buying in batches so the balance cap doesn't limit us)
-    const phase2Hours = (totalDays - switchDay) * 24;
+    // ── Phase 2: earn income and buy lodestones at the given interval
+    const phase2TotalMinutes = (totalDays - switchDay) * 24 * 60;
+    const intervals = Math.floor(phase2TotalMinutes / lodestoneBuyIntervalMin);
     let totalLodestones = 0;
     let totalSpentOnLodestones = 0;
 
-    for (let h = 0; h < phase2Hours; h++) {
+    for (let i = 0; i < intervals; i++) {
       const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
-      const earned = perMin * 60;
+      const earned = perMin * lodestoneBuyIntervalMin;
       balance += earned;
-      if (balance > balanceCap) balance = balanceCap;
+      if (balance > effectiveCap) balance = effectiveCap;
 
-      // buy lodestones whenever we can afford them
+      // buy lodestones
       if (lodestoneCost > 0) {
         const canBuy = Math.floor(balance / lodestoneCost);
         if (canBuy > 0) {
@@ -280,7 +281,15 @@ export function optimizeForReset(
       }
     }
 
-    // buy any remaining lodestones with leftover balance
+    // leftover time after last full interval
+    const leftoverMinutes = phase2TotalMinutes - intervals * lodestoneBuyIntervalMin;
+    if (leftoverMinutes > 0) {
+      const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+      balance += perMin * leftoverMinutes;
+      if (balance > effectiveCap) balance = effectiveCap;
+    }
+
+    // buy remaining lodestones
     if (lodestoneCost > 0) {
       const remaining = Math.floor(balance / lodestoneCost);
       totalLodestones += remaining;
@@ -317,6 +326,22 @@ export function optimizeForReset(
     lodestoneCount: best.lodestones,
     breakdown,
   };
+}
+
+/**
+ * Calculate how long until the balance hits the cap at the current earning rate.
+ * Returns time in minutes.
+ */
+export function minutesToCap(
+  currentBalance: number,
+  spawners: number,
+  revenuePer4Min: number,
+  effectiveCap: number,
+): number {
+  if (currentBalance >= effectiveCap) return 0;
+  const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+  if (perMin <= 0) return Infinity;
+  return (effectiveCap - currentBalance) / perMin;
 }
 
 // ── Lodestone / Island Level ────────────────────────────────────────
