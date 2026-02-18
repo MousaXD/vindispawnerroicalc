@@ -1,0 +1,259 @@
+// ─── Game Economy Calculation Engine ────────────────────────────────
+// Pure functions — no side effects, no framework dependencies.
+
+export interface CompoundDataPoint {
+  minute: number;
+  balance: number;
+  spawners: number;
+  linearBalance: number;
+  income: number; // cumulative income at this point
+}
+
+// ── Spawner Income ──────────────────────────────────────────────────
+
+/**
+ * Income per minute from `spawnerCount` spawners,
+ * where each spawner yields `revenuePer4Min` every 4 minutes.
+ */
+export function calculateProfitPerMinute(
+  spawnerCount: number,
+  revenuePer4Min: number
+): number {
+  return spawnerCount * (revenuePer4Min / 4);
+}
+
+export function calculateProfitPerHour(
+  spawnerCount: number,
+  revenuePer4Min: number
+): number {
+  return calculateProfitPerMinute(spawnerCount, revenuePer4Min) * 60;
+}
+
+export function calculateProfitPerDay(
+  spawnerCount: number,
+  revenuePer4Min: number
+): number {
+  return calculateProfitPerHour(spawnerCount, revenuePer4Min) * 24;
+}
+
+// ── Time-to-Goal ────────────────────────────────────────────────────
+
+/**
+ * Minutes needed to reach `goalAmount` from `currentBalance`
+ * at the given per-minute income rate.
+ * Returns Infinity when rate ≤ 0.
+ */
+export function calculateTimeToGoal(
+  goalAmount: number,
+  currentBalance: number,
+  profitPerMinute: number
+): number {
+  if (profitPerMinute <= 0) return Infinity;
+  const remaining = goalAmount - currentBalance;
+  if (remaining <= 0) return 0;
+  return remaining / profitPerMinute;
+}
+
+// ── Compound Growth Simulation ──────────────────────────────────────
+
+/**
+ * Minute-by-minute simulation:
+ *  • Each tick adds income based on current spawner count.
+ *  • Whenever balance ≥ spawnerCost we buy a spawner (up to balanceCap).
+ *  • Also tracks a "linear" baseline (no reinvesting).
+ *
+ * Returns an array sampled every `sampleEvery` minutes to keep chart data lean.
+ */
+export function simulateCompoundGrowth(
+  startSpawners: number,
+  startBalance: number,
+  durationHours: number,
+  spawnerCost: number,
+  revenuePer4Min: number,
+  balanceCap: number,
+  sampleEvery = 5 // emit a data-point every N minutes
+): CompoundDataPoint[] {
+  const totalMinutes = durationHours * 60;
+  const data: CompoundDataPoint[] = [];
+
+  // ── compound path
+  let balance = startBalance;
+  let spawners = startSpawners;
+
+  // ── linear path (never buys new spawners)
+  let linearBalance = startBalance;
+  const linearRate = calculateProfitPerMinute(startSpawners, revenuePer4Min);
+
+  for (let m = 0; m <= totalMinutes; m++) {
+    // record at sample points
+    if (m % sampleEvery === 0) {
+      data.push({
+        minute: m,
+        balance: Math.min(balance, balanceCap),
+        spawners,
+        linearBalance: Math.min(linearBalance, balanceCap),
+        income: balance - startBalance,
+      });
+    }
+
+    // tick income
+    const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+    balance += perMin;
+    linearBalance += linearRate;
+
+    // cap
+    if (balance > balanceCap) balance = balanceCap;
+    if (linearBalance > balanceCap) linearBalance = balanceCap;
+
+    // try to buy spawners (compound only)
+    while (balance >= spawnerCost) {
+      balance -= spawnerCost;
+      spawners += 1;
+    }
+  }
+
+  return data;
+}
+
+// ── Interval-Based Reinvestment Simulation ──────────────────────────
+
+export interface ReinvestmentSnapshot {
+  hour: number;
+  spawners: number;
+  balance: number;
+  totalEarned: number;
+  spawnersBought: number; // cumulative bought
+}
+
+/**
+ * Simulates buying spawners at a fixed interval (e.g. every 1h, 12h, 24h).
+ *
+ * Each interval:
+ *  1. Accumulate income from current spawners for `intervalHours`.
+ *  2. Buy as many spawners as affordable.
+ *  3. Record snapshot.
+ *
+ * Returns one snapshot per interval tick.
+ */
+export function simulateReinvestment(
+  startSpawners: number,
+  startBalance: number,
+  durationDays: number,
+  intervalHours: number,
+  spawnerCost: number,
+  revenuePer4Min: number,
+  balanceCap: number
+): ReinvestmentSnapshot[] {
+  const totalHours = durationDays * 24;
+  const ticks = Math.floor(totalHours / intervalHours);
+  const data: ReinvestmentSnapshot[] = [];
+
+  let spawners = startSpawners;
+  let balance = startBalance;
+  let totalEarned = 0;
+  let totalBought = 0;
+
+  // initial state
+  data.push({
+    hour: 0,
+    spawners,
+    balance,
+    totalEarned: 0,
+    spawnersBought: 0,
+  });
+
+  for (let t = 1; t <= ticks; t++) {
+    // earn for this interval
+    const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+    const earned = perMin * intervalHours * 60;
+    balance += earned;
+    totalEarned += earned;
+
+    if (balance > balanceCap) balance = balanceCap;
+
+    // buy spawners
+    while (balance >= spawnerCost) {
+      balance -= spawnerCost;
+      spawners += 1;
+      totalBought += 1;
+    }
+
+    data.push({
+      hour: t * intervalHours,
+      spawners,
+      balance,
+      totalEarned,
+      spawnersBought: totalBought,
+    });
+  }
+
+  return data;
+}
+
+// ── Lodestone / Island Level ────────────────────────────────────────
+
+export interface LodestoneResult {
+  count: number;
+  totalCost: number;
+  levelsGained: number;
+}
+
+/**
+ * How many Lodestones are needed to reach `targetLevel`,
+ * and what do they cost?
+ */
+export function calculateLodestones(
+  targetLevel: number,
+  lodestoneCost: number,
+  lodestoneValue: number
+): LodestoneResult {
+  if (lodestoneValue <= 0) return { count: 0, totalCost: 0, levelsGained: 0 };
+  const count = Math.ceil(targetLevel / lodestoneValue);
+  return {
+    count,
+    totalCost: count * lodestoneCost,
+    levelsGained: count * lodestoneValue,
+  };
+}
+
+/**
+ * Maximum Island Levels reachable with a given balance.
+ */
+export function maxLevelsFromBalance(
+  balance: number,
+  lodestoneCost: number,
+  lodestoneValue: number
+): number {
+  if (lodestoneCost <= 0) return 0;
+  return Math.floor(balance / lodestoneCost) * lodestoneValue;
+}
+
+// ── Formatting helpers ──────────────────────────────────────────────
+
+/** Pretty-print large numbers with commas. */
+export function formatMoney(n: number): string {
+  if (!isFinite(n)) return "∞";
+  if (n >= 1_000_000_000_000) return `$${(n / 1_000_000_000_000).toFixed(2)}T`;
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+}
+
+/** Format minutes → human-readable time string. */
+export function formatTime(totalMinutes: number): string {
+  if (!isFinite(totalMinutes) || totalMinutes < 0) return "∞";
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const mins = Math.floor(totalMinutes % 60);
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  parts.push(`${mins}m`);
+  return parts.join(" ");
+}
+
+export function formatNumber(n: number): string {
+  if (!isFinite(n)) return "∞";
+  return n.toLocaleString("en-US");
+}
