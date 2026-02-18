@@ -190,6 +190,115 @@ export function simulateReinvestment(
   return data;
 }
 
+// ── Reset Day Optimizer ─────────────────────────────────────────────
+
+export interface ResetOptimizerResult {
+  /** Best day to stop buying spawners (0 = never buy, totalDays = always buy) */
+  optimalSwitchDay: number;
+  /** Max island levels achievable */
+  maxLevels: number;
+  /** Final spawner count at switch point */
+  finalSpawners: number;
+  /** Money available for lodestones */
+  moneyForLodestones: number;
+  /** Lodestones purchased */
+  lodestoneCount: number;
+  /** Full breakdown for each possible switch day */
+  breakdown: ResetDayBreakdown[];
+}
+
+export interface ResetDayBreakdown {
+  switchDay: number;
+  spawnersAtSwitch: number;
+  balanceAtSwitch: number;
+  earnedInPhase2: number;
+  totalMoneyForLodestones: number;
+  lodestones: number;
+  islandLevels: number;
+}
+
+/**
+ * Finds the optimal day to stop buying spawners and start saving for lodestones.
+ *
+ * Tries every possible switch day from 0 to totalDays:
+ *  Phase 1 (day 0 → switchDay): reinvest into spawners every hour
+ *  Phase 2 (switchDay → totalDays): save all income, then buy lodestones
+ *
+ * Returns the switch day that maximizes total island levels.
+ */
+export function optimizeForReset(
+  startSpawners: number,
+  startBalance: number,
+  totalDays: number,
+  spawnerCost: number,
+  revenuePer4Min: number,
+  lodestoneCost: number,
+  lodestoneValue: number,
+  balanceCap: number
+): ResetOptimizerResult {
+  const breakdown: ResetDayBreakdown[] = [];
+
+  for (let switchDay = 0; switchDay <= totalDays; switchDay++) {
+    // ── Phase 1: reinvest into spawners (hourly buying)
+    let spawners = startSpawners;
+    let balance = startBalance;
+    const phase1Hours = switchDay * 24;
+
+    for (let h = 0; h < phase1Hours; h++) {
+      const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+      const earned = perMin * 60; // 1 hour of income
+      balance += earned;
+      if (balance > balanceCap) balance = balanceCap;
+
+      // buy spawners with available balance
+      while (balance >= spawnerCost) {
+        balance -= spawnerCost;
+        spawners += 1;
+      }
+    }
+
+    // ── Phase 2: save all income (no more spawner purchases)
+    const phase2Days = totalDays - switchDay;
+    const phase2Minutes = phase2Days * 24 * 60;
+    const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
+    const earnedInPhase2 = perMin * phase2Minutes;
+
+    let totalMoney = balance + earnedInPhase2;
+    if (totalMoney > balanceCap) totalMoney = balanceCap;
+
+    // buy lodestones
+    const lodestones = lodestoneCost > 0 ? Math.floor(totalMoney / lodestoneCost) : 0;
+    const islandLevels = lodestones * lodestoneValue;
+
+    breakdown.push({
+      switchDay,
+      spawnersAtSwitch: spawners,
+      balanceAtSwitch: balance,
+      earnedInPhase2,
+      totalMoneyForLodestones: totalMoney,
+      lodestones,
+      islandLevels,
+    });
+  }
+
+  // find optimal
+  let best = breakdown[0];
+  for (const b of breakdown) {
+    if (b.islandLevels > best.islandLevels) {
+      best = b;
+    }
+  }
+
+  return {
+    optimalSwitchDay: best.switchDay,
+    maxLevels: best.islandLevels,
+    finalSpawners: best.spawnersAtSwitch,
+    moneyForLodestones: best.totalMoneyForLodestones,
+    lodestoneCount: best.lodestones,
+    breakdown,
+  };
+}
+
 // ── Lodestone / Island Level ────────────────────────────────────────
 
 export interface LodestoneResult {

@@ -9,6 +9,7 @@ import SpawnerRoiCard from "@/components/calculators/SpawnerRoiCard";
 import CompoundGrowthChart from "@/components/calculators/CompoundGrowthChart";
 import LodestonePlanner from "@/components/calculators/LodestonePlanner";
 import ReinvestmentPlanner from "@/components/calculators/ReinvestmentPlanner";
+import ResetOptimizer from "@/components/calculators/ResetOptimizer";
 
 export default function Dashboard() {
     const {
@@ -85,6 +86,9 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </section>
+
+                {/* ── Reset Day Optimizer ──────────────────────────────── */}
+                <ResetOptimizer />
 
                 {/* ── Stats Cards ─────────────────────────────────────── */}
                 <SpawnerRoiCard />
