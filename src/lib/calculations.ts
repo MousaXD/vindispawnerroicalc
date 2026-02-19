@@ -106,9 +106,12 @@ export function simulateCompoundGrowth(
     if (linearBalance > balanceCap) linearBalance = balanceCap;
 
     // try to buy spawners (compound only)
-    while (balance >= spawnerCost) {
-      balance -= spawnerCost;
-      spawners += 1;
+    if (balance >= spawnerCost) {
+      const count = Math.floor(balance / spawnerCost);
+      if (count > 0) {
+        balance -= count * spawnerCost;
+        spawners += count;
+      }
     }
   }
 
@@ -172,10 +175,14 @@ export function simulateReinvestment(
     if (balance > balanceCap) balance = balanceCap;
 
     // buy spawners
-    while (balance >= spawnerCost) {
-      balance -= spawnerCost;
-      spawners += 1;
-      totalBought += 1;
+    // buy spawners
+    if (balance >= spawnerCost) {
+      const count = Math.floor(balance / spawnerCost);
+      if (count > 0) {
+        balance -= count * spawnerCost;
+        spawners += count;
+        totalBought += count;
+      }
     }
 
     data.push({
@@ -255,9 +262,13 @@ export function optimizeForReset(
       if (balance > effectiveCap) balance = effectiveCap;
 
       // buy spawners with available balance
-      while (balance >= spawnerCost) {
-        balance -= spawnerCost;
-        spawners += 1;
+      // buy spawners with available balance
+      if (balance >= spawnerCost) {
+        const count = Math.floor(balance / spawnerCost);
+        if (count > 0) {
+          balance -= count * spawnerCost;
+          spawners += count;
+        }
       }
     }
 
@@ -267,9 +278,12 @@ export function optimizeForReset(
       const perMin = calculateProfitPerMinute(spawners, revenuePer4Min);
       balance += perMin * phase1Leftover;
       if (balance > effectiveCap) balance = effectiveCap;
-      while (balance >= spawnerCost) {
-        balance -= spawnerCost;
-        spawners += 1;
+      if (balance >= spawnerCost) {
+        const count = Math.floor(balance / spawnerCost);
+        if (count > 0) {
+          balance -= count * spawnerCost;
+          spawners += count;
+        }
       }
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Sheet,
     SheetContent,
@@ -28,9 +28,10 @@ function SettingField({
     prefix?: string;
     suffix?: string;
 }) {
+    const id = label.replace(/\s+/g, '-').toLowerCase();
     return (
         <div className="space-y-1.5">
-            <Label className="text-xs text-zinc-400">{label}</Label>
+            <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
             <div className="relative">
                 {prefix && (
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
@@ -38,10 +39,11 @@ function SettingField({
                     </span>
                 )}
                 <Input
+                    id={id}
                     type="number"
                     value={value}
                     onChange={(e) => onChange(Number(e.target.value) || 0)}
-                    className="bg-white/[0.04] border-white/[0.08] text-zinc-200 font-mono text-sm pl-7 pr-3 focus:border-emerald-500/50 focus:ring-emerald-500/20"
+                    className="bg-muted/50 border-input text-foreground font-mono text-sm pl-7 pr-3 focus:border-emerald-500/50 focus:ring-emerald-500/20"
                 />
                 {suffix && (
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
@@ -56,6 +58,25 @@ function SettingField({
 export default function SettingsPanel() {
     const store = useGameStore();
     const [open, setOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+        return (
+            <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
+                aria-label="Open Game Settings"
+                disabled
+            >
+                <Settings className="h-5 w-5" />
+            </Button>
+        );
+    }
 
     const handleUpdate = (key: keyof GameSettings, value: number) => {
         store.updateSettings({ [key]: value });
@@ -67,12 +88,13 @@ export default function SettingsPanel() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all duration-200"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
+                    aria-label="Open Game Settings"
                 >
                     <Settings className="h-5 w-5" />
                 </Button>
             </SheetTrigger>
-            <SheetContent className="bg-zinc-950/95 backdrop-blur-2xl border-white/[0.08] w-[360px] overflow-y-auto">
+            <SheetContent className="bg-background/95 backdrop-blur-2xl border-white/[0.08] w-[360px] overflow-y-auto">
                 <SheetHeader className="pb-4">
                     <SheetTitle className="text-zinc-200 flex items-center gap-2">
                         <Settings className="h-4 w-4 text-emerald-400" />
@@ -142,7 +164,7 @@ export default function SettingsPanel() {
                     <Button
                         variant="outline"
                         onClick={() => store.resetDefaults()}
-                        className="w-full mt-4 border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+                        className="w-full mt-4 border-white/[0.08] text-muted-foreground hover:text-foreground hover:bg-muted"
                     >
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset to Defaults

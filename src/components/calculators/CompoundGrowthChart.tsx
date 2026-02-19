@@ -33,8 +33,8 @@ function CustomTooltip({ active, payload, label }: any) {
     const hours = Math.floor(label / 60);
     const mins = label % 60;
     return (
-        <div className="rounded-lg border border-white/10 bg-zinc-900/95 backdrop-blur-xl p-3 shadow-xl">
-            <p className="text-xs text-zinc-400 mb-2 font-medium">
+        <div className="rounded-lg border border-border bg-background/95 backdrop-blur-xl p-3 shadow-xl">
+            <p className="text-xs text-muted-foreground mb-2 font-medium">
                 Time: {hours}h {mins}m
             </p>
             {payload.map((p: any) => (
@@ -94,7 +94,7 @@ export default function CompoundGrowthChart() {
     const advantage = linearGain > 0 ? ((compoundGain / linearGain - 1) * 100) : 0;
 
     return (
-        <Card className="border-white/[0.08] bg-white/[0.02] backdrop-blur-xl shadow-2xl shadow-emerald-500/[0.03]">
+        <Card className="glass-card shadow-2xl shadow-emerald-500/[0.03]">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-200">
@@ -109,8 +109,8 @@ export default function CompoundGrowthChart() {
                                 size="sm"
                                 onClick={() => setDurationIdx(i)}
                                 className={`h-7 px-3 text-xs font-medium transition-all duration-200 ${i === durationIdx
-                                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 shadow-sm shadow-emerald-500/10"
-                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                                    ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 shadow-sm shadow-emerald-500/10"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
                                     }`}
                             >
                                 {d.label}

@@ -38,14 +38,14 @@ function StatItem({
     accentClass = "text-emerald-400",
 }: StatItemProps) {
     return (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-emerald-500/30 transition-all duration-300 group">
+        <div className="flex items-start gap-3 p-4 rounded-xl glass-card hover:border-emerald-500/30 transition-all duration-300 group">
             <div
                 className={`mt-0.5 p-2 rounded-lg bg-white/[0.05] ${accentClass} group-hover:scale-110 transition-transform duration-300`}
             >
                 {icon}
             </div>
             <div className="min-w-0 flex-1">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
                     {label}
                 </p>
                 <p
@@ -54,7 +54,7 @@ function StatItem({
                     {value}
                 </p>
                 {sublabel && (
-                    <p className="text-[11px] text-zinc-600 mt-0.5">{sublabel}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{sublabel}</p>
                 )}
             </div>
         </div>
@@ -109,7 +109,7 @@ export default function SpawnerRoiCard() {
     ]);
 
     return (
-        <Card className="border-white/[0.08] bg-white/[0.02] backdrop-blur-xl shadow-2xl shadow-emerald-500/[0.03]">
+        <Card className="glass-card shadow-2xl shadow-emerald-500/[0.03]">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-200">
                     <Zap className="h-5 w-5 text-emerald-400" />

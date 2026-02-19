@@ -11,6 +11,9 @@ export const DEFAULTS = {
     sellChestCapacity: 10_000, // spawners per sell chest
 } as const;
 
+export const RESET_DATE = new Date("2026-04-04T00:00:00");
+
+
 // ── Store shape ─────────────────────────────────────────────────────
 export interface GameSettings {
     spawnerCost: number;

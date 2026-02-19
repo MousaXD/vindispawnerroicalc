@@ -60,7 +60,7 @@ export default function ReinvestmentPlanner() {
     const dur = DURATIONS[durationIdx];
 
     return (
-        <Card className="border-white/[0.08] bg-white/[0.02] backdrop-blur-xl shadow-2xl shadow-cyan-500/[0.03]">
+        <Card className="glass-card shadow-2xl shadow-cyan-500/[0.03]">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-200">
@@ -75,8 +75,8 @@ export default function ReinvestmentPlanner() {
                                 size="sm"
                                 onClick={() => setDurationIdx(i)}
                                 className={`h-7 px-3 text-xs font-medium transition-all duration-200 ${i === durationIdx
-                                        ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 shadow-sm shadow-cyan-500/10"
-                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                                    ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 shadow-sm shadow-cyan-500/10"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                     }`}
                             >
                                 {d.label}
@@ -100,7 +100,7 @@ export default function ReinvestmentPlanner() {
                         return (
                             <div
                                 key={interval.hours}
-                                className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-cyan-500/30 transition-all duration-300 space-y-3"
+                                className="p-4 rounded-xl glass-card hover:border-cyan-500/30 transition-all duration-300 space-y-3"
                             >
                                 {/* Header */}
                                 <div className="flex items-center gap-2 pb-2 border-b border-white/[0.04]">

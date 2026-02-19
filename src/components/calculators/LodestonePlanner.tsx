@@ -35,7 +35,7 @@ export default function LodestonePlanner() {
     }, [currentSpawners, spawnerRevenue, result.totalCost]);
 
     return (
-        <Card className="border-white/[0.08] bg-white/[0.02] backdrop-blur-xl shadow-2xl shadow-purple-500/[0.03]">
+        <Card className="glass-card shadow-2xl shadow-purple-500/[0.03]">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-200">
                     <Mountain className="h-5 w-5 text-purple-400" />
@@ -68,7 +68,7 @@ export default function LodestonePlanner() {
 
                 {/* Results grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="p-3 rounded-xl bg-muted/30 border border-border">
                         <div className="flex items-center gap-2 mb-1">
                             <Gem className="h-3.5 w-3.5 text-purple-400" />
                             <span className="text-xs text-zinc-500 uppercase tracking-wider">
@@ -80,7 +80,7 @@ export default function LodestonePlanner() {
                         </p>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="p-3 rounded-xl bg-muted/30 border border-border">
                         <div className="flex items-center gap-2 mb-1">
                             <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
                             <span className="text-xs text-zinc-500 uppercase tracking-wider">
@@ -92,7 +92,7 @@ export default function LodestonePlanner() {
                         </p>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="p-3 rounded-xl bg-muted/30 border border-border">
                         <div className="flex items-center gap-2 mb-1">
                             <Clock className="h-3.5 w-3.5 text-amber-400" />
                             <span className="text-xs text-zinc-500 uppercase tracking-wider">

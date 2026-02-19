@@ -28,9 +28,8 @@ import {
     calculateProfitPerMinute,
     type ResetDayBreakdown,
 } from "@/lib/calculations";
+import { RESET_DATE } from "@/lib/store";
 
-// Server reset date
-const RESET_DATE = new Date("2026-04-04T00:00:00");
 
 const PRESET_INTERVALS = [1, 10, 15, 60] as const;
 
@@ -140,7 +139,7 @@ export default function ResetOptimizer() {
     const perMin = calculateProfitPerMinute(currentSpawners, spawnerRevenue);
 
     return (
-        <Card className="border-yellow-500/20 bg-gradient-to-br from-yellow-500/[0.03] to-amber-500/[0.02] backdrop-blur-xl shadow-2xl shadow-yellow-500/[0.05] relative overflow-hidden">
+        <Card className="glass-card relative overflow-hidden">
             <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-500/[0.04] rounded-full blur-3xl" />
 
             <CardHeader className="pb-3 relative">
@@ -174,7 +173,7 @@ export default function ResetOptimizer() {
                             <Users className="h-3.5 w-3.5 text-blue-400" />
                             Accounts
                         </label>
-                        <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                        <div className="flex gap-1 p-1 rounded-lg bg-muted/50 border border-border">
                             {[1, 2, 3, 4].map((n) => (
                                 <Button
                                     key={n}
@@ -204,7 +203,7 @@ export default function ResetOptimizer() {
                             <Sword className="h-3.5 w-3.5 text-emerald-400" />
                             Buy Spawners Every
                         </label>
-                        <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                        <div className="flex gap-1 p-1 rounded-lg bg-muted/50 border border-border">
                             {PRESET_INTERVALS.map((m) => (
                                 <Button
                                     key={m}
@@ -227,7 +226,8 @@ export default function ResetOptimizer() {
                                 max={1440}
                                 value={spawnerBuyInterval}
                                 onChange={(e) => setSpawnerBuyInterval(Math.max(1, parseInt(e.target.value) || 1))}
-                                className="bg-white/[0.04] border-white/[0.08] text-zinc-100 font-mono text-sm h-8 w-20"
+                                className="bg-muted/50 border-input text-foreground font-mono text-sm h-8 w-20"
+                                aria-label="Custom spawner buy interval (minutes)"
                             />
                             <span className="text-[10px] text-zinc-500">min (custom)</span>
                         </div>
@@ -239,7 +239,7 @@ export default function ResetOptimizer() {
                             <Timer className="h-3.5 w-3.5 text-purple-400" />
                             Buy Lodestones Every
                         </label>
-                        <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                        <div className="flex gap-1 p-1 rounded-lg bg-muted/50 border border-border">
                             {PRESET_INTERVALS.map((m) => (
                                 <Button
                                     key={m}
@@ -262,7 +262,8 @@ export default function ResetOptimizer() {
                                 max={1440}
                                 value={lodestoneBuyInterval}
                                 onChange={(e) => setLodestoneBuyInterval(Math.max(1, parseInt(e.target.value) || 1))}
-                                className="bg-white/[0.04] border-white/[0.08] text-zinc-100 font-mono text-sm h-8 w-20"
+                                className="bg-muted/50 border-input text-foreground font-mono text-sm h-8 w-20"
+                                aria-label="Custom lodestone buy interval (minutes)"
                             />
                             <span className="text-[10px] text-zinc-500">min (custom)</span>
                         </div>
@@ -273,7 +274,7 @@ export default function ResetOptimizer() {
                 <div
                     className={`p-3 rounded-xl border flex items-start gap-3 ${capWarning
                         ? "bg-red-500/[0.06] border-red-500/20"
-                        : "bg-white/[0.02] border-white/[0.06]"
+                        : "bg-muted/30 border-border"
                         }`}
                 >
                     <AlertTriangle
@@ -308,7 +309,7 @@ export default function ResetOptimizer() {
                 </div>
 
                 {/* ── Sell Chests Info ───────────────────────────────── */}
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-muted/30 border border-border flex items-center gap-3">
                     <Package className="h-5 w-5 text-orange-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                         <p className="text-xs text-zinc-400">
@@ -371,7 +372,7 @@ export default function ResetOptimizer() {
                             onClick={() => setCustomSwitchDay(null)}
                             className={`h-7 px-3 text-xs font-medium transition-all duration-200 ${isUsingOptimal
                                 ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border-yellow-500/30"
-                                : "text-zinc-400 hover:text-zinc-200 border-white/[0.08] hover:bg-white/[0.04]"
+                                : "text-muted-foreground hover:text-foreground border-border hover:bg-muted"
                                 }`}
                         >
                             <Star className="h-3 w-3 mr-1" />
@@ -553,7 +554,7 @@ export default function ResetOptimizer() {
                                 </p>
                             </div>
                         ) : (
-                            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                            <div className="p-3 rounded-xl bg-muted/30 border border-border">
                                 <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
                                     🔄 Always Reinvest
                                 </p>
