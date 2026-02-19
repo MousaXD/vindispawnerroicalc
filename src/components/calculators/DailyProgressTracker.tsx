@@ -39,6 +39,7 @@ export default function DailyProgressTracker() {
 
     // State
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [time, setTime] = useState<string>("00:00");
     const [spawnersAtDate, setSpawnersAtDate] = useState<string>("");
 
     // Initialize with "yesterday" if empty (optional, but good UX)
@@ -52,8 +53,13 @@ export default function DailyProgressTracker() {
         const start = parseInt(spawnersAtDate);
         if (isNaN(start) || start < 0) return null;
 
+        // Combine date and time
+        const [hours, minutes] = time.split(":").map(Number);
+        const startDateTime = new Date(date);
+        startDateTime.setHours(hours || 0, minutes || 0, 0, 0);
+
         const now = new Date();
-        const minutesPassed = differenceInMinutes(now, date);
+        const minutesPassed = differenceInMinutes(now, startDateTime);
 
         if (minutesPassed <= 0) return null; // Future or same time
 
@@ -101,12 +107,12 @@ export default function DailyProgressTracker() {
             recommendations,
             minutesPassed,
             chartData: sim1h.map(pt => ({
-                time: format(new Date(date.getTime() + pt.hour * 3600 * 1000), "MMM d HH:mm"),
+                time: format(new Date(startDateTime.getTime() + pt.hour * 3600 * 1000), "MMM d HH:mm"),
                 spawners: pt.spawners,
                 actual: null // We don't have intermediate actual data, only end point?
             }))
         };
-    }, [date, spawnersAtDate, currentSpawners, spawnerCost, spawnerRevenue, effectiveCap]);
+    }, [date, time, spawnersAtDate, currentSpawners, spawnerCost, spawnerRevenue, effectiveCap]);
 
     return (
         <Card className="glass-card shadow-2xl shadow-emerald-500/[0.03]">
@@ -119,7 +125,7 @@ export default function DailyProgressTracker() {
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label className="text-xs text-zinc-400">Start Date & Time (Approx)</Label>
+                        <Label className="text-xs text-zinc-400">Start Date</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -138,7 +144,7 @@ export default function DailyProgressTracker() {
                                     mode="single"
                                     selected={date}
                                     onSelect={setDate}
-                                    disabled={(date) =>
+                                    disabled={(date: Date) =>
                                         date > new Date() || date < new Date("1900-01-01")
                                     }
                                     initialFocus
@@ -147,18 +153,27 @@ export default function DailyProgressTracker() {
                         </Popover>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="spawners-start" className="text-xs text-zinc-400">
-                            Spawners you had then
-                        </Label>
+                        <Label className="text-xs text-zinc-400">Time</Label>
                         <Input
-                            id="spawners-start"
-                            type="number"
-                            placeholder="e.g. 5000"
-                            value={spawnersAtDate}
-                            onChange={(e) => setSpawnersAtDate(e.target.value)}
+                            type="time"
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
                             className="bg-muted/50 border-input text-foreground font-mono text-sm"
                         />
                     </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="spawners-start" className="text-xs text-zinc-400">
+                        Spawners you had then
+                    </Label>
+                    <Input
+                        id="spawners-start"
+                        type="number"
+                        placeholder="e.g. 5000"
+                        value={spawnersAtDate}
+                        onChange={(e) => setSpawnersAtDate(e.target.value)}
+                        className="bg-muted/50 border-input text-foreground font-mono text-sm"
+                    />
                 </div>
 
                 {analysis && (
